@@ -20,8 +20,8 @@ from eclipse to emacs.
         (global-eclim-mode)
 
 ## Usage
-To get started just lunch the eclim executable that the placed in your
-Eclipse installation directory.
+To get started just lunch the eclim executable that the installer placed in your
+Eclipse directory.
 
 ### Projects
 The easiest way to manage your eclipse projects in emacs is to use the `eclim-manage-projects` command. This opens up a new buffer containing all the projects of your eclipse workspace.
