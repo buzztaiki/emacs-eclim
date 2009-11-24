@@ -1,0 +1,22 @@
+#!/bin/sh
+
+eclim=$1
+project=$2
+file=$3
+sleep=$4
+
+$eclim -command java_src_update -p $project -f $file > /dev/null
+sleep $sleep
+# $eclim -command java_src_update -p $project -f $file -v | \
+#     sed -e 's/w$/warning/' | \
+#     sed -e 's/e$/error/' | \
+#     sed -e 's/|.\+|[^/' | \
+    
+
+$eclim -command java_src_update -p $project -f $file -v | \
+    perl -ne '
+if (/.+/) {
+  @a=split(/\|/,$_); @l=split(/ col /,$a[1]);
+  $a[2] = "Warning: ".$a[2] if $a[3] =~ /w/;
+  print join("|",$a[0],$l[0],$l[1],$a[2])."\n"}
+'
