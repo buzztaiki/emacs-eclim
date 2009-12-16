@@ -288,6 +288,21 @@ has been found."
           (eclim--visit-declaration (car search-result))
         (eclim--find-display-results pattern search-result)))))
 
+(defun eclim--java-find-dwim-at-point (bounds)
+  (eclim/java-search (eclim--project-name)
+                     (eclim--project-current-file)
+                     (number-to-string (save-excursion
+                                         (goto-char (car bounds))
+                                         (eclim--byte-offset)))
+                     (number-to-string (- (cdr bounds) (car bounds)))))
+
+(defun eclim-java-find-dwim-at-point ()
+  (interactive)
+  (let ((bounds (bounds-of-thing-at-point 'sexp)))
+    (eclim--find-display-results
+     (buffer-substring (car bounds) (cdr bounds))
+     (eclim--java-find-dwim-at-point bounds))))
+  
 (defun eclim--java-convert-signature-to-pattern (signature)
   (replace-regexp-in-string "#" "."
                             (progn (string-match "^\\(.*?\\)(.*$"
