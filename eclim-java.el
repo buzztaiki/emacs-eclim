@@ -530,4 +530,65 @@ user if necessary."
                                  (if eclim-mode (eclim/java-src-update))))
                              t))
 
+(defun eclim/java-correct (project file line offset &optional apply)
+  (apply 'eclim--call-process (eclim--build-command "java_correct"
+						    "-p" project
+						    "-f" file
+						    "-l" (number-to-string line)
+						    "-o" (number-to-string offset)
+						    "-a" (and apply (number-to-string apply)))))
+
+(defun eclim--java-correct ()
+  (remove-if-not (lambda (line)
+		   (string-match "^[0-9]+\\.[0-9]+:" line))
+		 (eclim/java-correct (eclim--project-name)
+				     (eclim--project-current-file)
+				     (line-number-at-pos)
+				     (eclim--byte-offset))))
+  
+(defun eclim--java-apply-correct (apply)
+  (eclim/java-correct (eclim--project-name)
+		      (eclim--project-current-file)
+		      (line-number-at-pos)
+		      (eclim--byte-offset)
+		      apply))
+
+(defun eclim-java-correct ()
+  (interactive)
+  (let ((apply
+	 (funcall
+	  (if (require 'pulldown nil t)
+	      (lambda (prompt list) (pulldown-menu list :message prompt))
+	    'completing-read)
+	  "Select correct action: " (eclim--java-correct))))
+    (when (string-match "^[0-9]+" apply)
+      (let ((row (line-number-at-pos))
+	    (col (current-column))
+	    (correct (eclim--java-apply-correct (string-to-number (match-string 0 apply))))
+	    (file (file-name-nondirectory (buffer-file-name)))
+	    (cs buffer-file-coding-system)
+	    (tmp (make-temp-file "eclim-correct-")))
+	(let ((coding-system-for-write cs))
+	  (with-temp-buffer
+	    (insert (mapconcat 'identity correct "\n"))
+	    (write-region (point-min) (point-max) tmp nil 'quiet)))
+	(with-current-buffer (get-buffer-create "*eclim-correct*")
+	  (let ((inhibit-read-only t))
+	    (erase-buffer)
+	    (call-process "diff" nil t nil
+			  "-u" "--strip-trailing-cr"
+			  file tmp)
+	    (goto-char (point-min))
+	    (when (search-forward tmp nil t)
+	      (replace-match (concat "correct/" file) nil t))
+	    (delete-file tmp))
+	  (pop-to-buffer (current-buffer))
+	  (diff-mode)
+	  (set-buffer-modified-p nil)
+	  (setq buffer-read-only t)
+	  (goto-char (point-min))
+	  (diff-hunk-next 1))))))
+	  
+	
+
 (provide 'eclim-java)
