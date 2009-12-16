@@ -152,6 +152,10 @@ saved."
           (point-min) (point-max)))
         nil))))
 
+(defun eclim--complete-pulldown (prompt choices)
+  (require 'pulldown nil t)
+  (pulldown-menu choices :message prompt))
+
 (defun eclim--completing-read (prompt choices)
   (funcall eclim-interactive-completion-function prompt choices))
 
