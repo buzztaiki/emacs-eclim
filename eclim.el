@@ -154,7 +154,7 @@ saved."
 
 (defun eclim--complete-read-popup (prompt choices)
   (require 'popup nil t)
-  (popup-menu* choices :message prompt))
+  (popup-menu* choices :prompt prompt))
 
 (defun eclim--completing-read (prompt choices)
   (funcall eclim-interactive-completion-function prompt choices))
