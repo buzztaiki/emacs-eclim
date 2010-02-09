@@ -575,7 +575,7 @@ user if necessary."
   (let ((apply
 	 (funcall
 	  (if (require 'popup nil t)
-	      (lambda (prompt list) (popup-menu* list :pompt prompt))
+	      (lambda (prompt list) (popup-menu* list :prompt prompt))
 	    'completing-read)
 	  "Select correct action: " (eclim--java-correct))))
     (when (string-match "^[0-9]+" apply)
