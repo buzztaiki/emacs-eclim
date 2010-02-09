@@ -14,18 +14,22 @@
 (defun acee-prefix ()
   (setq
    acee-start-point
-   (or
-    (save-excursion
-      (ac-prefix-c-dot))
-    (save-excursion
-      ;; TODO: handle method argument
-      (when (and acee-use-yasnippet-p
-		 (= (char-before) ?<))
-	(backward-char))
-      (when (and (< (skip-chars-backward "_a-zA-Z0-9")
-		    0)
-		 (looking-at "[A-Z]"))
-	(point))))))
+   (and eclim-mode
+	(or
+	 (save-excursion
+	   (ac-prefix-c-dot))
+	 (save-excursion
+	   ;; TODO: handle method argument
+	   (when (and acee-use-yasnippet-p
+		      (= (char-before) ?<))
+	     (backward-char))
+	   (when (and (< (skip-chars-backward "_a-zA-Z0-9")
+			 0)
+		      (looking-at "[a-zA-Z]"))
+	     (point)))
+	 (and (not ac-auto-start)
+	      (point))))))
+   
 
 (defun acee-action ()
   (let ((candidate (assoc-default (buffer-substring acee-start-point (point)) acee-candidates)))

@@ -1,6 +1,6 @@
 (require 'eclim)
 
-(defvar flymake-eclim-program "flymake-eclim")
+(defvar flymake-eclim-program (expand-file-name "flymake-eclim" (file-name-directory load-file-name)))
 (defvar flymake-eclim-sleep-time 1)
 (defvar flymake-eclim-file-name-mask
   '("\\.java\\'" flymake-eclim-init))
@@ -19,14 +19,16 @@
 	     (number-to-string flymake-eclim-sleep-time))))))
 
 (defun flymake-eclim-setup ()
-  (set (make-local-variable 'flymake-start-syntax-check-on-newline) nil)
-  (set (make-local-variable 'flymake-allowed-file-name-masks)
-       (list flymake-eclim-file-name-mask))
-  (set (make-local-variable 'flymake-err-line-patterns)
-       (list flymake-eclim-err-line-pattern))
-  (flymake-mode 1)
-  (when (timerp flymake-timer)
-    (cancel-timer flymake-timer)
-    (setq flymake-timer nil)))
+  (interactive)
+  (when eclim-mode
+    (set (make-local-variable 'flymake-start-syntax-check-on-newline) nil)
+    (set (make-local-variable 'flymake-allowed-file-name-masks)
+	 (list flymake-eclim-file-name-mask))
+    (set (make-local-variable 'flymake-err-line-patterns)
+	 (list flymake-eclim-err-line-pattern))
+    (flymake-mode 1)
+    (when (timerp flymake-timer)
+      (cancel-timer flymake-timer)
+      (setq flymake-timer nil))))
 
 (provide 'flymake-eclim)

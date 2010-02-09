@@ -43,3 +43,5 @@
      `((name . ,pattern)
        (candidates . ,(mapcar (lambda (x) (cons (nth 2 x) x)) results))
        (action . eclim--visit-declaration)))))
+
+(provide 'anything-eclim)

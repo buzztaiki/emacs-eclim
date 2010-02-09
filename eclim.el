@@ -152,21 +152,23 @@ saved."
           (point-min) (point-max)))
         nil))))
 
-(defun eclim--complete-pulldown (prompt choices)
-  (require 'pulldown nil t)
-  (pulldown-menu choices :message prompt))
+(defun eclim--complete-read-popup (prompt choices)
+  (require 'popup nil t)
+  (popup-menu* choices :message prompt))
 
 (defun eclim--completing-read (prompt choices)
   (funcall eclim-interactive-completion-function prompt choices))
 
 (defun eclim--project-dir ()
   "Return this file's project root directory."
-  (or eclim--project-dir
-      (setq eclim--project-dir
-            (directory-file-name
-             (file-name-directory
-              (expand-file-name
-               (locate-dominating-file buffer-file-name ".project")))))))
+  (setq eclim--project-dir
+	(or eclim--project-dir
+	    (and buffer-file-name
+		 (let ((file (locate-dominating-file 
+			      buffer-file-name ".project")))
+		   (and file
+			(directory-file-name
+			 (file-name-directory (expand-file-name file)))))))))
 
 (defun eclim--project-name ()
   (when buffer-file-name
@@ -312,8 +314,12 @@ saved."
     (kill-local-variable 'eclim--project-dir)
     (kill-local-variable 'eclim--project-name)))
 
+(defun eclim-turn-on-maybe ()
+  (when (eclim--project-dir)
+    (eclim-mode 1)))
+
 (define-globalized-minor-mode global-eclim-mode eclim-mode
-  (lambda () (eclim-mode 1)))
+  eclim-turn-on-maybe)
 
 (require 'eclim-project)
 (require 'eclim-java)

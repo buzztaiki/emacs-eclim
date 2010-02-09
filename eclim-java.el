@@ -574,14 +574,15 @@ user if necessary."
   (interactive)
   (let ((apply
 	 (funcall
-	  (if (require 'pulldown nil t)
-	      (lambda (prompt list) (pulldown-menu list :message prompt))
+	  (if (require 'popup nil t)
+	      (lambda (prompt list) (popup-menu* list :message prompt))
 	    'completing-read)
 	  "Select correct action: " (eclim--java-correct))))
     (when (string-match "^[0-9]+" apply)
       (let ((row (line-number-at-pos))
 	    (col (current-column))
 	    (correct (eclim--java-apply-correct (string-to-number (match-string 0 apply))))
+	    (dir (file-name-directory (buffer-file-name)))
 	    (file (file-name-nondirectory (buffer-file-name)))
 	    (cs buffer-file-coding-system)
 	    (tmp (make-temp-file "eclim-correct-")))
@@ -590,6 +591,7 @@ user if necessary."
 	    (insert (mapconcat 'identity correct "\n"))
 	    (write-region (point-min) (point-max) tmp nil 'quiet)))
 	(with-current-buffer (get-buffer-create "*eclim-correct*")
+	  (setq default-directory dir)
 	  (let ((inhibit-read-only t))
 	    (erase-buffer)
 	    (call-process "diff" nil t nil
