@@ -14,9 +14,8 @@
       (setq acee-candidates
 	    (loop for c in ret
 		  collect
-		  (cons 
-		   (or (acee-package-substring c)
-		       (eclim--completion-candidate-doc c))
+		  (cons
+		   (acee-candidate-doc c)
 		   c)))
       (mapcar 'car acee-candidates))))
 
@@ -52,18 +51,23 @@
 (defun acee-action ()
   (let ((candidate (assoc-default (buffer-substring acee-start-point (point)) acee-candidates)))
     (delete-region acee-start-point (point))
-    (setq acee-start-point nil)
     (unwind-protect
-	(if (acee-package-substring candidate)
-	    (insert (acee-package-substring candidate))
-	  (when candidate
-	    (if acee-use-yasnippet-p
-		(yas/expand-snippet (acee-make-template candidate))
-	      (insert (eclim--completion-candidate-class candidate)))))
+	(when candidate
+	  (if acee-use-yasnippet-p
+	      (yas/expand-snippet (acee-make-template candidate))
+	    (insert (acee-candidate-class candidate))))
       (setq acee-start-point nil)
       (setq acee-package-prefix nil))))
 
   
+(defun acee-candidate-doc (candidate)
+  (or (acee-package-substring candidate)
+      (eclim--completion-candidate-doc candidate)))
+
+(defun acee-candidate-class (candidate)
+  (or (acee-package-substring candidate)
+      (eclim--completion-candidate-class candidate)))
+      
 (defun acee-package-substring (candidate)
   (let ((doc (eclim--completion-candidate-doc candidate)))
     (when (and (string= (eclim--completion-candidate-type candidate) "")
@@ -79,7 +83,7 @@
     (cond
      ((string= type "f") (acee-make-method-template str))
      ((string= type "c") (acee-make-class-template str))
-     (t (eclim--completion-candidate-class candidate)))))
+     (t (acee-candidate-class candidate)))))
 
 (defun acee-make-method-template (str)
   (with-temp-buffer
