@@ -4,15 +4,20 @@
 
 (defvar acee-candidates nil)
 (defvar acee-start-point nil)
+(defvar acee-package-prefix nil)
 (defvar acee-use-yasnippet-p (require 'yasnippet nil t))
 
 (defun acee-candidates ()
   (eclim/java-src-update)
   (let ((ret (eclim/java-complete)))
-    (when ret
+    (when (and ret (eclim--completion-candidate-doc (car ret)))
       (setq acee-candidates
 	    (loop for c in ret
-		  collect (cons (eclim--completion-candidate-doc c) c)))
+		  collect
+		  (cons 
+		   (or (acee-package-substring c)
+		       (eclim--completion-candidate-doc c))
+		   c)))
       (mapcar 'car acee-candidates))))
 
 (defun acee-prefix ()
@@ -21,33 +26,53 @@
    (and eclim-mode
 	(or
 	 (save-excursion
-	   (when (save-excursion (re-search-backward "\\<package\\|import\\>" (line-beginning-position) t))
-	     (and (skip-chars-backward "_a-zA-Z0-9.")
-		  (point))))
-	 (save-excursion
 	   (ac-prefix-c-dot))
 	 (save-excursion
 	   ;; TODO: handle method argument
 	   (when (and acee-use-yasnippet-p
 		      (= (char-before) ?<))
 	     (backward-char))
-	   (when (and (< (skip-chars-backward "_a-zA-Z0-9")
+	   (when (and (not ac-auto-start)
+		      (< (skip-chars-backward "_a-zA-Z0-9")
 			 0)
 		      (looking-at "[a-zA-Z]"))
 	     (point)))
 	 (and (not ac-auto-start)
 	      (= (char-before) ?\ )
-	      (point))))))
+	      (point)))))
+  (setq acee-package-prefix
+	  (save-excursion 
+	    (and
+	     acee-start-point
+	     (goto-char acee-start-point)
+	     (skip-chars-backward "_a-zA-Z0-9.")
+	     (buffer-substring (point) acee-start-point))))
+  acee-start-point)
 
 (defun acee-action ()
   (let ((candidate (assoc-default (buffer-substring acee-start-point (point)) acee-candidates)))
     (delete-region acee-start-point (point))
     (setq acee-start-point nil)
-    (when candidate
-      (if acee-use-yasnippet-p
-	  (yas/expand-snippet (acee-make-template candidate))
-	(insert (eclim--completion-candidate-class candidate))))))
+    (unwind-protect
+	(if (acee-package-substring candidate)
+	    (insert (acee-package-substring candidate))
+	  (when candidate
+	    (if acee-use-yasnippet-p
+		(yas/expand-snippet (acee-make-template candidate))
+	      (insert (eclim--completion-candidate-class candidate)))))
+      (setq acee-start-point nil)
+      (setq acee-package-prefix nil))))
+
   
+(defun acee-package-substring (candidate)
+  (let ((doc (eclim--completion-candidate-doc candidate)))
+    (when (and (string= (eclim--completion-candidate-type candidate) "")
+	       acee-package-prefix
+	       (string=
+		(substring doc 0 (length acee-package-prefix))
+		acee-package-prefix))
+      (substring doc (length acee-package-prefix)))))
+
 (defun acee-make-template (candidate)
   (let ((type (eclim--completion-candidate-type candidate))
 	(str (eclim--completion-candidate-doc candidate)))
