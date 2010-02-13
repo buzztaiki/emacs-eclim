@@ -17,6 +17,10 @@
    (and eclim-mode
 	(or
 	 (save-excursion
+	   (when (save-excursion (re-search-backward "\\<package\\|import\\>" (line-beginning-position) t))
+	     (and (skip-chars-backward "_a-zA-Z0-9.")
+		  (point))))
+	 (save-excursion
 	   (ac-prefix-c-dot))
 	 (save-excursion
 	   ;; TODO: handle method argument
@@ -28,8 +32,8 @@
 		      (looking-at "[a-zA-Z]"))
 	     (point)))
 	 (and (not ac-auto-start)
+	      (= (char-before) ?\ )
 	      (point))))))
-   
 
 (defun acee-action ()
   (let ((candidate (assoc-default (buffer-substring acee-start-point (point)) acee-candidates)))
@@ -104,6 +108,6 @@
   '((candidates . acee-candidates)
     (prefix . acee-prefix)
     (action . acee-action)
-    (cache . t)))
+    (cache)))
 
 (provide 'ac-emacs-eclim)
