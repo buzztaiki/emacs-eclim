@@ -27,8 +27,15 @@ t;; eclim-java.el --- an interface to the Eclipse IDE.
 
 ;;* Eclim Java
 
+(eval-when-compile
+  (require 'cl))
 (require 'json)
 (require 'decompile nil t)
+(require 'diff-mode)
+
+(require 'eclim)
+(require 'eclim-project)
+
 
 (define-key eclim-mode-map (kbd "C-c C-e s") 'eclim-java-method-signature-at-point)
 (define-key eclim-mode-map (kbd "C-c C-e f d") 'eclim-java-find-declaration)

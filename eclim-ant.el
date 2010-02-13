@@ -26,6 +26,9 @@
 
 ;;* Eclim Ant
 
+(require 'eclim)
+(require 'eclim-project)
+
 (define-key eclim-mode-map (kbd "C-c C-e a c") 'eclim-ant-clear-cache)
 (define-key eclim-mode-map (kbd "C-c C-e a r") 'eclim-ant-run)
 (define-key eclim-mode-map (kbd "C-c C-e a a") 'eclim-ant-run)

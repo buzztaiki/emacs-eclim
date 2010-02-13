@@ -1,4 +1,5 @@
 (require 'eclim)
+(require 'flymake)
 
 (defvar flymake-eclim-program (expand-file-name "flymake-eclim" (file-name-directory load-file-name)))
 (defvar flymake-eclim-sleep-time 1)

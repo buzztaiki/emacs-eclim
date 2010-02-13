@@ -1,3 +1,7 @@
+(require 'eclim)
+(require 'eclim-java)
+(require 'auto-complete)
+
 (defvar acee-candidates nil)
 (defvar acee-start-point nil)
 (defvar acee-use-yasnippet-p (require 'yasnippet nil t))

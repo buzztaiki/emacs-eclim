@@ -24,6 +24,9 @@
 ;; "eclim/command-name", like eclim/project-list.
 
 ;;* Eclim Project
+(eval-when-compile
+  (require 'cl))
+(require 'eclim)
 
 (defvar eclim-project-mode-hook nil)
 

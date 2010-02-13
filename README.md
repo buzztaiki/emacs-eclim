@@ -16,7 +16,7 @@ from eclipse to emacs.
         (add-to-list 'load-path (expand-file-name "/path/to/emacs-eclim/"))
         ;; only add the vendor path when you want to use the libraries provided with emacs-eclim
         (add-to-list 'load-path (expand-file-name "~/coding/git/emacs-eclim/vendor"))
-        (require 'eclim)
+        (require 'eclim-load)
 
         (setq eclim-auto-save t)
         (global-eclim-mode)

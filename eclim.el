@@ -321,10 +321,4 @@ saved."
 (define-globalized-minor-mode global-eclim-mode eclim-mode
   eclim-turn-on-maybe)
 
-(require 'eclim-project)
-(require 'eclim-java)
-(require 'eclim-ant)
-(require 'eclim-maven)
-(require 'eclim-problems)
-
 (provide 'eclim)
