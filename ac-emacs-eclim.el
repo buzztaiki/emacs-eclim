@@ -5,7 +5,8 @@
 (defvar acee-candidates nil)
 (defvar acee-start-point nil)
 (defvar acee-package-prefix nil)
-(defvar acee-use-yasnippet-p (require 'yasnippet nil t))
+(defvar acee-use-yasnippet-p nil)
+(defvar acee-trigger-commands '(auto-complete ac-trigger-key-command))
 
 (defun acee-candidates ()
   (eclim/java-src-update)
@@ -31,14 +32,19 @@
 	   (when (and acee-use-yasnippet-p
 		      (= (char-before) ?<))
 	     (backward-char))
-	   (when (and (not ac-auto-start)
+	   (when (and (memq this-command acee-trigger-commands)
 		      (< (skip-chars-backward "_a-zA-Z0-9")
 			 0)
 		      (looking-at "[a-zA-Z]"))
 	     (point)))
-	 (and (not ac-auto-start)
-	      (= (char-before) ?\ )
-	      (point)))))
+	 (and (memq this-command acee-trigger-commands)
+	      (=
+	       (save-excursion
+		 (skip-chars-backward " \t" (line-beginning-position))
+		 (point))
+	       (line-beginning-position))
+	      (point))
+	 )))
   (setq acee-package-prefix
 	  (save-excursion 
 	    (and
@@ -71,6 +77,7 @@
 (defun acee-package-substring (candidate)
   (let ((doc (eclim--completion-candidate-doc candidate)))
     (when (and (string= (eclim--completion-candidate-type candidate) "")
+	       (not (string-match "Override" doc))
 	       acee-package-prefix
 	       (string=
 		(substring doc 0 (length acee-package-prefix))
