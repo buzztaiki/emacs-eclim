@@ -80,7 +80,7 @@
 	       (not (string-match "Override" doc))
 	       acee-package-prefix
 	       (string=
-		(substring doc 0 (length acee-package-prefix))
+		(substring doc 0 (min (length acee-package-prefix) (length doc)))
 		acee-package-prefix))
       (substring doc (length acee-package-prefix)))))
 
