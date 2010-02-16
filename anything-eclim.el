@@ -5,6 +5,7 @@
 (defvar anything-c-source-eclim-java-types
   '((name . "Java Types")
     (candidates . anything-eclim-java-type-candidates)
+    (candidate-transformer . anything-eclim-candidate-transformer)
     (action . eclim--visit-declaration)
     (requires-pattern . 3)))
 
@@ -13,26 +14,31 @@
   (anything '(anything-c-source-eclim-java-types)))
 
 (defun anything-eclim-java-type-candidates ()
-  (mapcar (lambda (x)
-	    (cons 
-	     (let ((fqcn (nth 2 x)))
-	       (if (string-match "\\.\\([^.]+\\)$" fqcn)
-		   (concat (match-string 1 fqcn)
-			   (propertize
-			    (concat
-			     " - "
-			     (substring fqcn 0 (match-beginning 0)))
-			    'face 'shadow))
-		 fqcn))
-	     x))
-	  (eclim/java-search
-	   (eclim--project-name)
-	   nil nil nil
-	   (concat anything-pattern "*") 
-	   "type"
-	   "declarations"
-	   "project"
-	   "true")))
+  (start-process
+   "anything-eclim-java-type-candidates" nil
+   (expand-file-name eclim-executable)
+   "-command" "java_search"
+   "-n" (with-current-buffer anything-current-buffer
+	  (eclim--project-name))
+   "-t" "type"
+   "-x" "declarations"
+   "-s" "project"
+   "-i"
+   "-p" (concat anything-pattern "*")))
+
+(defun anything-eclim-candidate-transformer (candidates)
+  (loop for x in candidates
+	collect
+	(let* ((resp (split-string x "|"))
+	       (fqcn (nth 2 resp)))
+	  (cons
+	   (if (and fqcn (string-match "^\\(.+\\)\\.\\([^.]+\\)$" fqcn))
+	       (format "%s - %s"
+		       (match-string 2 fqcn)
+		       (propertize (match-string 1 fqcn)
+				   'face 'shadow))
+	     fqcn)
+	   resp))))
 
 (defun anything-eclim-find-display-results (pattern results &optional ignore)
   (when (null base-directory) 
