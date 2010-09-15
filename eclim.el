@@ -187,7 +187,7 @@ saved."
   (pop-to-buffer (get-buffer-create "*eclim: find"))
   (let ((buffer-read-only nil))
     (erase-buffer)
-    (insert (concat "-*- mode: eclim-find; default-directory: " default-directory: " -*-"))
+    (insert (concat "-*- mode: eclim-find; default-directory: " default-directory " -*-"))
     (newline 2)
     (insert (concat "eclim java_search -p " pattern))
     (newline)
