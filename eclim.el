@@ -19,6 +19,8 @@
 ;;
 ;;  - Nikolaj Schumacher <bugs * nschum de>
 ;;  - Yves Senn <yves senn * gmx ch>
+;;  - Fredrik Appelberg <fredrik * bitbakery se>
+;;  - Alessandro Arzilli <alessandro.arzilli * gmail com>
 ;;
 ;;; Conventions
 ;;
@@ -112,26 +114,6 @@ saved."
   (let ((w (string-width string)))
     (equal (substring-no-properties string (- w (string-width prefix)) w) prefix)))
 
-(defun eclim--buffer-lines ()
-  (goto-char (point-max))
-  (let (lines)
-    (while (= 0 (forward-line -1))
-      (push (replace-regexp-in-string "" ""
-                                      (buffer-substring-no-properties (line-beginning-position)
-                                                                      (line-end-position)))
-            lines))
-    lines))
-
-(defun eclim--error-buffer (text)
-  (unless eclim--supress-errors
-    (let ((errbuf (get-buffer-create "*Eclim errors*")))
-      (set-buffer errbuf)
-      (setq buffer-read-only nil)
-      (goto-char (point-max))
-      (insert text)
-      (setq buffer-read-only t)
-      (display-buffer errbuf t))))
-
 (defun eclim--build-command (command &rest args)
   (cons command
 	(loop for a = args then (rest (rest a))
@@ -140,17 +122,15 @@ saved."
 	      while arg when val append (list arg val))))
 
 (defun eclim--call-process (&rest args)
-  (message (apply 'concat eclim-executable " -command " (mapcar (lambda (arg)
-                                                                  (concat " " arg)) args)))
-  (let ((coding-system-for-read 'utf-8))
-    (with-temp-buffer
-      (if (= 0 (apply 'call-process eclim-executable nil t nil
-                      "-command" args))
-          (eclim--buffer-lines)
-        (eclim--error-buffer
-         (buffer-substring-no-properties
-          (point-min) (point-max)))
-        nil))))
+  (let ((cmd (apply 'concat eclim-executable " -command " 
+		    (mapcar (lambda (arg) (concat " " arg))
+			    (mapcar (lambda (arg) (if (numberp arg) (number-to-string arg) arg))
+				    args)))))
+    (message cmd)
+    (remove-if (lambda (s) (= 0 (length s)))
+	    (split-string
+	     (shell-command-to-string cmd)
+	     "\n"))))
 
 (defun eclim--complete-read-popup (prompt choices)
   (require 'popup nil t)
@@ -160,9 +140,9 @@ saved."
   (funcall eclim-interactive-completion-function prompt choices))
 
 (defun eclim--project-dir ()
-  "Return this file's project root directory."
-  (setq eclim--project-dir
-	(or eclim--project-dir
+  "return this file's project root directory."
+  (or eclim--project-dir
+      (setq eclim--project-dir
 	    (and buffer-file-name
 		 (let ((file (locate-dominating-file 
 			      buffer-file-name ".project")))
@@ -203,27 +183,24 @@ saved."
 	  (beginning-of-buffer)
 	  (kill-buffer old-buffer))))))
 
-(defun eclim--find-display-results-function (pattern results &optional base-directory)
-  (when (null base-directory) 
-    (setq base-directory (eclim--project-dir)))
+(defun eclim--find-display-results-function (pattern results)
   (pop-to-buffer (get-buffer-create "*eclim: find"))
   (let ((buffer-read-only nil))
     (erase-buffer)
-    (insert (concat "-*- mode: eclim-find; default-directory: " base-directory " -*-"))
+    (insert (concat "-*- mode: eclim-find; default-directory: " default-directory: " -*-"))
     (newline 2)
     (insert (concat "eclim java_search -p " pattern))
     (newline)
     (dolist (result res)
-      (insert (eclim--convert-find-result-to-string result base-directory))
+      (insert (eclim--convert-find-result-to-string result default-directory))
       (newline))
-    (setq default-directory base-directory)
     (grep-mode)))
 
-(defun eclim--find-display-results (pattern results &optional open-single-file base-directory)
+(defun eclim--find-display-results (pattern results &optional open-single-file)
   (let ((res (remove-if (lambda (r) (zerop (length (remove-if (lambda (r) (zerop (length r))) r)))) results)))
     (if (and (= 1 (length res)) open-single-file)
 	(eclim--visit-declaration (car res))
-      (funcall eclim-find-display-results-function pattern results base-directory))))
+      (funcall eclim-find-display-results-function pattern results))))
 
 (defun eclim--convert-find-result-to-string (line &optional directory)
   (let ((converted-directory (replace-regexp-in-string "\\\\" "/" (car line))))
@@ -247,10 +224,6 @@ saved."
 (defun eclim--project-current-file ()
   (file-relative-name buffer-file-name (eclim--project-dir)))
 
-(defun eclim--temp-buffer ()
-  (set-buffer (get-buffer-create "*eclim-temporary-buffer*"))
-  (delete-region (point-min) (point-max)))
-
 (defun eclim--byte-offset (&optional text)
   ;; TODO: restricted the ugly newline counting to dos buffers => remove it all the way later
   (let ((current-offset (position-bytes (1- (point)))))
@@ -258,21 +231,6 @@ saved."
     (if (string-match "dos" (symbol-name buffer-file-coding-system))
         (+ current-offset (how-many "\n" (point-min) (point)))
       current-offset)))
-
-;; (defun eclim--byte-offset ()
-;;   ;; TODO: restricted the ugly newline counting to dos buffers => remove it all the way later
-;;   (let ((current-offset (position-bytes (1- (point))))
-;;         (current-file buffer-file-name)
-;;         (current-line (line-number-at-pos (point))))
-;;     (when (not current-offset) (setq current-offset 0))
-;;     (if (string-match "dos" (symbol-name buffer-file-coding-system))
-;;         (save-excursion
-;;           (set-buffer (get-buffer-create "*eclim: temporary*"))
-;;           (erase-buffer)
-;;           (insert-file-contents-literally buffer-file-name)
-;;           (goto-line current-line))
-;;         (+ current-offset (how-many "\n" (point-min) (point)))
-;;       current-offset)))
 
 (defun eclim--current-encoding ()
   (let* ((coding-system (symbol-name buffer-file-coding-system))
@@ -318,7 +276,17 @@ saved."
   (when (eclim--project-dir)
     (eclim-mode 1)))
 
+<<<<<<< HEAD:eclim.el
 (define-globalized-minor-mode global-eclim-mode eclim-mode
   eclim-turn-on-maybe)
+=======
+
+
+(require 'eclim-project)
+(require 'eclim-java)
+(require 'eclim-ant)
+(require 'eclim-maven)
+(require 'eclim-problems)
+>>>>>>> 4043eaf39269a1bb9f6a465fe84aa7b7de8fdd9c:eclim.el
 
 (provide 'eclim)

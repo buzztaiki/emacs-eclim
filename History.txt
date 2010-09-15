@@ -1,0 +1,16 @@
+== In Git
+
+=== New Features
+ * organize imports
+ * browsing with the class hierarchy
+ * override / implement methods
+ * display problems
+ * run Ant targets
+ * run Maven phases and goals
+ * automatic refresh of the problems buffer
+ * file-filter for the problems buffer
+ * interface improvements for the problems buffer
+
+=== Bugfixes
+ * fixed a problem on startup when the eclimd server was not started
+ * bugfix in call to eclim-call-process

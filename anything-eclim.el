@@ -40,7 +40,7 @@
 	     fqcn)
 	   resp))))
 
-(defun anything-eclim-find-display-results (pattern results &optional ignore)
+(defun anything-eclim-find-display-results (pattern results)
   (when (null base-directory) 
     (setq base-directory (eclim--project-dir)))
   (let ((anything-execute-action-at-once-if-one t)

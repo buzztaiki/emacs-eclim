@@ -1,4 +1,4 @@
-t;; eclim-java.el --- an interface to the Eclipse IDE.
+;; eclim-java.el --- an interface to the Eclipse IDE.
 ;;
 ;; Copyright (C) 2009  Yves Senn <yves senn * gmx ch>
 ;;
@@ -228,13 +228,13 @@ has been found."
                      (eclim--project-current-file)
                      (read-string "Name: ")
                      (eclim--current-encoding)))
-  (message (eclim/java-refactor-rename project
-                                       file
-                                       name
-                                       (number-to-string (car (eclim--java-identifier-at-point2)))
-                                       (number-to-string (length (symbol-name (symbol-at-point))))
-                                       encoding
-                                       " ")))
+  (eclim/java-refactor-rename project
+			      file
+			      name
+			      (number-to-string (car (eclim--java-identifier-at-point2)))
+			      (number-to-string (length (symbol-name (symbol-at-point))))
+			      encoding
+			      " "))
 
 (defun eclim-java-hierarchy (project file offset encoding)
   (interactive (list (eclim--project-name)
@@ -469,6 +469,33 @@ a java type that can be imported."
     (eclim--java-organize-imports (eclim/java-import-order (eclim--project-name))
                                   (list (eclim--completing-read "Import: " imports)))))
 
+(defun eclim--ends-with (a b)
+  (if (> (length a) (length b))
+      (string= (substring a (- (length a) (length b))) b)
+    nil))
+
+(defun eclim--fix-static-import (import-spec)
+  (let ((imports (cdr (assoc 'imports import-spec)))
+	(type (cdr (assoc 'type import-spec))))
+    (message "Imports %s" imports)
+    (if (not (= 1 (length imports)))
+	import-spec
+      
+      (if (not (stringp type))
+	  import-spec
+
+	(progn
+
+	  (message "Type: %s first element of imports: %s" type (elt imports 0))
+	  
+	  (if (eclim--ends-with (elt imports 0) type)
+	      import-spec
+	    (progn
+	      (message "Appending")
+	      (list
+	       (cons 'imports (vector (concat (elt imports 0) "." type)))
+	       (cons 'type type)))))))))
+
 (defun eclim-java-import-missing ()
   "Checks the current file for missing imports and prompts the
 user if necessary."
@@ -478,7 +505,7 @@ user if necessary."
           (json-read-from-string
            (replace-regexp-in-string "'" "\""
                                      (first (eclim/java-import-missing (eclim--project-name)))))
-          do (let* ((candidates (append (cdr (assoc 'imports unused)) nil))
+          do (let* ((candidates (append (cdr (assoc 'imports (eclim--fix-static-import unused))) nil))
                     (len (length candidates)))
                (if (= len 0) nil
                  (eclim--java-organize-imports imports-order
@@ -496,17 +523,25 @@ user if necessary."
 
 (defun eclim/java-impl (project file &optional offset encoding type superType methods)
   (eclim--check-project project)
-  (eclim--call-process "java_impl" "-p" project "-f" file))
+  (eclim--call-process "java_impl" "-p" project "-f" file "-o" offset))
 
 (defun eclim-java-implement ()
   (interactive)
+  (eclim/java-src-update)
   ;; TODO: present the user with more fine grain control over the selection of methods
-  (let* ((response (eclim/java-impl (eclim--project-name) (eclim--project-current-file)))
-         (methods (remove-if-not (lambda (element) (string-match "(.*)" element))
-                                 response)))
-    (insert (eclim--completing-read "Signature: " methods) " {}")
-    (backward-char)))
-
+  (let* ((response (eclim/java-impl (eclim--project-name) (eclim--project-current-file) (eclim--byte-offset)))
+         (methods 
+	  (remove-if (lambda (element) (string-match "//" element))
+		     (remove-if-not (lambda (element) (string-match "(.*)" element))
+				    response)))
+	 (start (point)))
+    (insert 
+     "@Override\n"
+     (replace-regexp-in-string " abstract " " " 
+			       (eclim--completing-read "Signature: " methods)) 
+     " {}")
+    (backward-char)
+    (indent-region start (point))))
 
 (defun eclim--java-complete-internal (completion-list)
   (let* ((window (get-buffer-window "*Completions*" 0))
@@ -617,7 +652,4 @@ user if necessary."
 	  (setq buffer-read-only t)
 	  (goto-char (point-min))
 	  (diff-hunk-next 1))))))
-	  
-	
-
 (provide 'eclim-java)
