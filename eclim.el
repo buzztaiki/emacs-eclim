@@ -276,17 +276,7 @@ saved."
   (when (eclim--project-dir)
     (eclim-mode 1)))
 
-<<<<<<< HEAD:eclim.el
 (define-globalized-minor-mode global-eclim-mode eclim-mode
   eclim-turn-on-maybe)
-=======
-
-
-(require 'eclim-project)
-(require 'eclim-java)
-(require 'eclim-ant)
-(require 'eclim-maven)
-(require 'eclim-problems)
->>>>>>> 4043eaf39269a1bb9f6a465fe84aa7b7de8fdd9c:eclim.el
 
 (provide 'eclim)
